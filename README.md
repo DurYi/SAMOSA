@@ -6,8 +6,8 @@
 
 _Bridging the implicit video-understanding prior of SAM 2 with explicit, tracking-oriented modeling of motion, geometry, and semantics._
 
-[Deyi Zhu](https://github.com/DurYi)<sup>*</sup>,
-[Yuji Wang](https://voyagewang.github.io/)<sup>*</sup>,
+[Deyi Zhu](https://github.com/DurYi/)<sup>&ast;</sup>,
+[Yuji Wang](https://voyagewang.github.io/)<sup>&ast;</sup>,
 [Yong Liu](https://yongliu20.github.io/),
 [Yansong Tang](https://andytang15.github.io/),
 [Bingyao Yu](https://yuby14.github.io/),
@@ -16,14 +16,14 @@ _Bridging the implicit video-understanding prior of SAM 2 with explicit, trackin
 
 Tsinghua University
 
-<sub><sup>*</sup> Equal contribution</sub>
+<sub><sup>&ast;</sup> Equal contribution</sub>
 
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg" alt="arXiv"></a>
   <a href="https://github.com/facebookresearch/sam2"><img src="https://img.shields.io/badge/Built%20on-SAM%202-blue.svg" alt="SAM 2"></a>
   <img src="https://img.shields.io/badge/python-%E2%89%A53.10-3776ab.svg" alt="Python">
   <img src="https://img.shields.io/badge/PyTorch-%E2%89%A52.3.1-ee4c2c.svg" alt="PyTorch">
-  <img src="https://img.shields.io/badge/status-research%20preview-orange.svg" alt="Status">
+  <img src="https://img.shields.io/badge/status-under%20review-orange.svg" alt="Status">
 </p>
 
 **Official repository** for the paper
