@@ -6,6 +6,18 @@
 
 _Bridging the implicit video-understanding prior of SAM 2 with explicit, tracking-oriented modeling of motion, geometry, and semantics._
 
+[Deyi Zhu](https://github.com/DurYi)<sup>*</sup>,
+[Yuji Wang](https://voyagewang.github.io/)<sup>*</sup>,
+[Yong Liu](https://yongliu20.github.io/),
+[Yansong Tang](https://andytang15.github.io/),
+[Bingyao Yu](https://yuby14.github.io/),
+[Jiwen Lu](http://ivg.au.tsinghua.edu.cn/Jiwen_Lu/),
+[Jie Zhou](https://scholar.google.com/citations?user=6a79aPwAAAAJ&hl=en)
+
+Tsinghua University
+
+<sub><sup>*</sup> Equal contribution</sub>
+
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg" alt="arXiv"></a>
   <a href="https://github.com/facebookresearch/sam2"><img src="https://img.shields.io/badge/Built%20on-SAM%202-blue.svg" alt="SAM 2"></a>
@@ -68,13 +80,17 @@ Install the other requirements:
 pip install tqdm matplotlib==3.7 numpy==1.26.4 tikzplotlib jpeg4py opencv-python lmdb pandas scipy loguru shapely
 ```
 
-### 2. SAM 2.1 Checkpoint Download
+### 2. Checkpoint Download
+
+Download SAM 2.1 checkpoints using:
 
 ```bash
 cd checkpoints && \
 ./download_ckpts.sh && \
 cd ..
 ```
+
+The checkpoint for Motion Predictor has been included in this repo at [`sam2/checkpoints/mp.pth`](sam2/checkpoints/mp.pth). No additional download needed.
 
 ### 3. Data Preparation
 
