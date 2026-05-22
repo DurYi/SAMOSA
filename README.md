@@ -2,9 +2,7 @@
 
 # 🥟 SAMOSA
 
-### Segment Anything with **M**otion, Ge**O**metry, and **S**emantic **A**daptation for Complex Nonlinear Visual Object Tracking
-
-_Bridging the implicit video-understanding prior of SAM 2 with explicit, tracking-oriented modeling of motion, geometry, and semantics._
+### Segment Anything with Motion, Geometry, and Semantic Adaptation for Complex Nonlinear Visual Object Tracking
 
 [Deyi Zhu](https://github.com/DurYi/)<sup>&ast;</sup>,
 [Yuji Wang](https://voyagewang.github.io/)<sup>&ast;</sup>,
@@ -19,14 +17,14 @@ Tsinghua University
 <sub><sup>&ast;</sup> Equal contribution</sub>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/arXiv-coming%20soon-b31b1b.svg" alt="arXiv"></a>
+  <a href="https://arxiv.org/abs/2605.22538"><img src="https://img.shields.io/badge/arXiv-2605.22538-b31b1b.svg" alt="arXiv"></a>
   <a href="https://github.com/facebookresearch/sam2"><img src="https://img.shields.io/badge/Built%20on-SAM%202-blue.svg" alt="SAM 2"></a>
   <img src="https://img.shields.io/badge/python-%E2%89%A53.10-3776ab.svg" alt="Python">
   <img src="https://img.shields.io/badge/PyTorch-%E2%89%A52.3.1-ee4c2c.svg" alt="PyTorch">
   <img src="https://img.shields.io/badge/status-under%20review-orange.svg" alt="Status">
 </p>
 
-**Official repository** for the paper
+**Official repository** for the [paper](https://arxiv.org/abs/2605.22538)
 _"Segment Anything with Motion, Geometry, and Semantic Adaptation for Complex Nonlinear Visual Object Tracking."_
 
 </div>
@@ -54,7 +52,7 @@ In this way, SAMOSA bridges the gap between SAM 2's implicit video-understanding
 
 ## 🗺️ Roadmap
 
-- [ ] **Incoming** — Release our paper on arXiv.
+- [x] **Done** — Our paper is available on [arXiv](https://arxiv.org/abs/2605.22538)!
 - [ ] **Incoming** — Release test scripts for more benchmarks.
 - [ ] **Incoming** — Release raw results.
 - [ ] **Incoming** — Release training code for the Motion Predictor.
@@ -113,3 +111,16 @@ python utils/calc_uav_metrics.py --res_path PATH_OF_RESULTS
 ## 🙏 Acknowledgment
 
 SAMOSA is built on top of [SAM 2](https://github.com/facebookresearch/sam2?tab=readme-ov-file), [SAMURAI](https://github.com/yangchris11/samurai), and [SAMITE](https://github.com/Sam1224/SAMITE). Thanks for their great work!
+
+## 📚 Citation
+
+If you find SAMOSA useful in your research, please consider citing our work:
+
+```bibtex
+@article{zhu2026samosa,
+  title         = {Segment Anything with Motion, Geometry, and Semantic Adaptation for Complex Nonlinear Visual Object Tracking},
+  author        = {Zhu, Deyi and Wang, Yuji and Liu, Yong and Tang, Yansong and Yu, Bingyao and Lu, Jiwen and Zhou, Jie},
+  journal       = {arXiv preprint arXiv:2605.22538},
+  year          = {2026}
+}
+```
