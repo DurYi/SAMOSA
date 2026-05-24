@@ -41,29 +41,29 @@ def main(args):
     print(args)
     model_cfg = determine_model_cfg(args.model_path, args.mode)
     predictor = build_sam2_video_predictor(model_cfg, ckpt_path=args.model_path, mp_ckpt_path=args.mp_model_path, device="cuda:0")
-    test_video_paths = os.listdir(args.test_path)
-    test_video_paths.sort()
+    test_video_names = os.listdir(args.test_path)
+    test_video_names.sort()
     method_name = 'samosa' if 'samosa' in args.mode else args.mode
     out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/Anti-UAV300/test"
     
-    for i, test_video_path in enumerate(test_video_paths): 
-        if osp.exists(f"{out_folder}/{test_video_path}.json"):
-            print(f"Skipped {test_video_path} as it has been processed.")
+    for i, test_video_name in enumerate(test_video_names): 
+        if osp.exists(f"{out_folder}/{test_video_name}.json"):
+            print(f"Skipped {test_video_name} as it has been processed.")
             continue
            
-        frames_or_path = osp.join(args.test_path, test_video_path)
-        visible_path = osp.join(frames_or_path, 'visible') \
-            if not args.inference_on_mp4 else osp.join(frames_or_path, 'visible.mp4')
-        print(f"({i+1}/{len(test_video_paths)}):{visible_path}")
-        json_path = osp.join(frames_or_path, 'visible.json')
+        video_folder = osp.join(args.test_path, test_video_name)
+        frames_path = osp.join(video_folder, 'visible') \
+            if not args.inference_on_mp4 else osp.join(video_folder, 'visible.mp4')
+        print(f"({i+1}/{len(test_video_names)}):{frames_path}")
+        json_path = osp.join(video_folder, 'visible.json')
         gt_traj = load_gt_label(json_path)
         prompts, points, flag, index = load_json_point(json_path)
-        if osp.isdir(visible_path):
-            frames = sorted([osp.join(visible_path, f) for f in os.listdir(visible_path) if f.endswith(".jpg")])
+        if osp.isdir(frames_path):
+            frames = sorted([osp.join(frames_path, f) for f in os.listdir(frames_path) if f.endswith(".jpg")])
             loaded_frames = [cv2.imread(frame_path) for frame_path in frames]
             height, width = loaded_frames[0].shape[:2]
         else:
-            cap = cv2.VideoCapture(visible_path)
+            cap = cv2.VideoCapture(frames_path)
             loaded_frames = []
             while True:
                 ret, frame = cap.read()
@@ -80,11 +80,11 @@ def main(args):
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
         if args.save_to_video:
-            out = cv2.VideoWriter(f"{out_folder}/{test_video_path}.mp4", fourcc, 30, (width, height))
+            out = cv2.VideoWriter(f"{out_folder}/{test_video_name}.mp4", fourcc, 30, (width, height))
 
         
         with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
-            state = predictor.init_state(visible_path, offload_video_to_cpu=True)
+            state = predictor.init_state(frames_path, offload_video_to_cpu=True)
             bbox, track_label = prompts[0]
             point_prompt = np.array(points[0], np.int32)
             labels = np.array([1], np.int32)
@@ -145,14 +145,14 @@ def main(args):
                     "gt_rect": gt_traj["gt_rect"],
                     "exist": gt_traj["exist"]
                 }
-                with open(f"{out_folder}/{test_video_path}.json", "w") as f:
+                with open(f"{out_folder}/{test_video_name}.json", "w") as f:
                     json.dump(json_data, f, indent=4)
             if args.save_mask_to_npy:
-                np.save(f"{out_folder}/{test_video_path}.npy", mask_results)
+                np.save(f"{out_folder}/{test_video_name}.npy", mask_results)
                 
-        assert len(pred_traj)==len(gt_traj["gt_rect"]), f"The length of pred_traj and gt_traj is not the same for {test_video_path}"  # Ensure the two lists have the same length         
+        assert len(pred_traj)==len(gt_traj["gt_rect"]), f"The length of pred_traj and gt_traj is not the same for {test_video_name}"  # Ensure the two lists have the same length         
         clip_acc = eval_acc(pred_traj, gt_traj["gt_rect"], gt_traj["exist"])
-        print("The accuracy for {} is {}".format(test_video_path, clip_acc))
+        print("The accuracy for {} is {}".format(test_video_name, clip_acc))
 
         # Clear the GPU cache
         torch.cuda.empty_cache()
@@ -182,7 +182,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_root", default="output/", help="path to test video path")
     parser.add_argument("--test_path", default="data/Anti-UAV300/test/", help="path to test video path")
-    parser.add_argument("--gt_path", default="data/Anti-UAV300/test/", help="Path to the gt file.")
     parser.add_argument("--model_path", default="sam2/checkpoints/sam2.1_hiera_large.pt", help="Path to the model checkpoint.")
     
     parser.add_argument("--mp_model_path", default="sam2/checkpoints/mp.pth", help="Path to the markov model checkpoint.")

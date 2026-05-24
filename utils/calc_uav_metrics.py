@@ -117,18 +117,12 @@ def calc_and_save_metrics(res_root):
     folders = [
         'Anti-UAV300/test',
         'Anti-UAV300/test_infrared',
-        'Anti-UAV300/test-dev',
-        'Anti-UAV300/test-dev_IR',
         'Anti-UAV410/test',
-        'Anti-UAV410/test-dev',
         'Anti-UAV600/val',
         'DUT',
         'AntiUAV300/test',
         'AntiUAV300/test_infrared',
-        'AntiUAV300/test-dev',
-        'AntiUAV300/test-dev_IR',
         'AntiUAV410/test',
-        'AntiUAV410/test-dev',
         'AntiUAV600/val',
     ]
     for folder in folders:

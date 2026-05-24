@@ -11,31 +11,39 @@ import json
 sys.path.append("./sam2")
 from sam2.build_sam import build_sam2_video_predictor
 from utils.metrics import eval_acc
-from utils.calc_uav_metrics import calc_and_save_metrics
-from utils.utils import determine_model_cfg, load_gt_label
+from utils.calc_vot_metrics import print_otb100_results
+from utils.utils import determine_model_cfg
 color = [(0, 255, 0)]
-                        
-def load_json_point(gt_path):
+   
+def load_txt_point(gt_path):
     with open(gt_path, 'r') as f:
-        data = json.load(f)  # Read JSON data
+        first_frame_label = f.readlines()
     prompts = {}
     points = {}
-    flag = False 
-    index = len(data['exist'])
-    for index in range(len(data['exist'])):
-        if data['exist'][index] == 1:
-            break
-    first_frame_label = data['gt_rect'][index] 
-    if index == len(data['exist']) - 1:
-        flag = True
-        return prompts, points, flag
-    x, y, w, h = first_frame_label  # Get x, y, w, h
-    # Convert top-left coordinates and width/height to center-point coordinates
-    x_center, y_center = (x + w / 2), (y + h / 2)
-    x_center, y_center, w, h = int(x_center), int(y_center), int(w), int(h)
-    prompts[0] = ((x, y, x + w, y + h), 0)  # Given box top-left and bottom-right coordinates
-    points[0] = [[x_center, y_center]]  # Save only the center-point coordinates
-    return prompts, points, flag, index
+    gt_rect = []
+    for fid, line in enumerate(first_frame_label):
+        if ',' in line:
+            x, y, w, h = map(int, line.split(','))
+        elif '\t' in line:
+            x, y, w, h = map(int, line.split('\t'))
+        else:
+            x, y, w, h = map(int, line.split(' '))
+        xc, yc = (x + w / 2), y + h / 2
+        xc, yc = int(xc), int(yc)
+        prompts[fid] = ((x, y, x + w, y + h), 0)
+        points[fid] = [[xc,yc]]
+        gt_rect.append([x, y, w, h])
+    exist = []
+    for rect in gt_rect:
+        if rect == [-100, -100, -100, -100] or rect == [0, 0, 0, 0] or rect == []:
+            exist.append(0)
+        else:
+            exist.append(1)
+    gt_traj = {
+        'gt_rect': gt_rect,
+        'exist': exist
+    }
+    return prompts, points, gt_traj
 
 def main(args):
     print(args)
@@ -44,20 +52,19 @@ def main(args):
     test_video_names = os.listdir(args.test_path)
     test_video_names.sort()
     method_name = 'samosa' if 'samosa' in args.mode else args.mode
-    out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/Anti-UAV300/test_infrared"
+    out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/OTB100"
     
     for i, test_video_name in enumerate(test_video_names): 
-        if osp.exists(f"{out_folder}/{test_video_name}.json"):
+        if osp.exists(f"{out_folder}/{test_video_name}.txt"):
             print(f"Skipped {test_video_name} as it has been processed.")
             continue
            
-        video_folder = osp.join(args.test_path, test_video_name)
-        frames_path = osp.join(video_folder, 'infrared') \
-            if not args.inference_on_mp4 else osp.join(video_folder, 'infrared.mp4')
+        video_folder = osp.join(args.test_path, test_video_name, test_video_name)
+        frames_path = osp.join(video_folder, 'img')
+        txt_path = osp.join(video_folder,'groundtruth_rect.txt')
         print(f"({i+1}/{len(test_video_names)}):{frames_path}")
-        json_path = osp.join(video_folder, 'infrared.json')
-        gt_traj = load_gt_label(json_path)
-        prompts, points, flag, index = load_json_point(json_path)
+        prompts, points, gt_traj = load_txt_point(txt_path)
+        index = 0
         if osp.isdir(frames_path):
             frames = sorted([osp.join(frames_path, f) for f in os.listdir(frames_path) if f.endswith(".jpg")])
             loaded_frames = [cv2.imread(frame_path) for frame_path in frames]
@@ -103,6 +110,8 @@ def main(args):
             for frame_idx, object_ids, masks in predictor.propagate_in_video(state):
                 mask_to_vis = {}
                 bbox_to_vis = {}
+                if frame_idx >= len(gt_traj["gt_rect"]):
+                    break
 
                 for obj_id, mask in zip(object_ids, masks):
                     mask = mask[0].cpu().numpy()
@@ -127,26 +136,26 @@ def main(args):
 
                     for obj_id, bbox in bbox_to_vis.items():
                         cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), color[obj_id % len(color)], 2)
-                        gt_bbox = gt_traj["gt_rect"][frame_idx]
-                        if len(gt_bbox) == 0:
-                            gt_bbox = [0, 0, 0, 0]
-                        cv2.rectangle(img, (gt_bbox[0], gt_bbox[1]), (gt_bbox[0] + gt_bbox[2], gt_bbox[1] + gt_bbox[3]), (0, 0, 255), 2)
+                        if frame_idx < len(gt_traj["gt_rect"]):
+                            gt_bbox = gt_traj["gt_rect"][frame_idx]
+                            if len(gt_bbox) == 0:
+                                gt_bbox = [0, 0, 0, 0]
+                            cv2.rectangle(img, (gt_bbox[0], gt_bbox[1]), (gt_bbox[0] + gt_bbox[2], gt_bbox[1] + gt_bbox[3]), (0, 0, 255), 2)
                     out.write(img)
-                if args.save_bbox_to_json:
+                if args.save_bbox_to_txt:
                     bbox_results.append(bbox_to_vis[0])
                 if args.save_mask_to_npy:
                     mask_results.append(mask_to_vis[0])
 
             if args.save_to_video:
                 out.release()
-            if args.save_bbox_to_json:
-                json_data = {
-                    "res": bbox_results,
-                    "gt_rect": gt_traj["gt_rect"],
-                    "exist": gt_traj["exist"]
-                }
-                with open(f"{out_folder}/{test_video_name}.json", "w") as f:
-                    json.dump(json_data, f, indent=4)
+            if args.save_bbox_to_txt:
+                with open(f"{out_folder}/{test_video_name}.txt", 'w') as f:
+                    for i,pred in enumerate(bbox_results):
+                        if pred == []:
+                            pred = [0, 0, 0, 0]
+                        x, y, w, h = pred
+                        f.write(f'{x},{y},{w},{h}\n')
             if args.save_mask_to_npy:
                 np.save(f"{out_folder}/{test_video_name}.npy", mask_results)
                 
@@ -160,7 +169,7 @@ def main(args):
         torch.clear_autocast_cache()
         torch.cuda.empty_cache()
 
-    calc_and_save_metrics(f"{args.out_root}/{method_name}{args.output_suffix}")
+    print_otb100_results(f"{args.out_root}/{method_name}{args.output_suffix}")
     try:
         del predictor, state
     except:
@@ -181,18 +190,18 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_root", default="output/", help="path to test video path")
-    parser.add_argument("--test_path", default="data/Anti-UAV300/test/", help="path to test video path")
+    parser.add_argument("--test_path", default="data/OTB100/raw_corrected/", help="path to test video path")
     parser.add_argument("--model_path", default="sam2/checkpoints/sam2.1_hiera_large.pt", help="Path to the model checkpoint.")
     
     parser.add_argument("--mp_model_path", default="sam2/checkpoints/mp.pth", help="Path to the markov model checkpoint.")
-    parser.add_argument("--mode", default="samosa_b", help="Mode to use (samosa | samurai | sam2.1 | ...)")
+    parser.add_argument("--mode", default="samosa_a", help="Mode to use (samosa | samurai | sam2.1 | ...)")
     parser.add_argument("--output_suffix", default="", help="Suffix to output folder")
     
     parser.add_argument("--no_ignore", default=True, help="Do not ignore videos without target in the first frame but with target in the rest frames.")
     parser.add_argument("--inference_on_mp4", default=False, help="Inference on mp4 instead of jpg frames.")
     parser.add_argument("--use_point_prompt", type=str2bool, default=True, help="Whether to input point prompt.")
     parser.add_argument("--use_bbox_prompt", type=str2bool, default=True, help="Whether to input bbox prompt.")
-    parser.add_argument("--save_bbox_to_json", type=str2bool, default=True, help="Save bbox results to a json.")
+    parser.add_argument("--save_bbox_to_txt", type=str2bool, default=True, help="Save bbox results to a txt.")
     parser.add_argument("--save_mask_to_npy", type=str2bool, default=False, help="Save mask results to a npy.")
     parser.add_argument("--save_to_video", type=str2bool, default=True, help="Save results to a video.")
 

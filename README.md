@@ -53,8 +53,8 @@ In this way, SAMOSA bridges the gap between SAM 2's implicit video-understanding
 ## 🗺️ Roadmap
 
 - [x] **Done** — Our paper is available on [arXiv](https://arxiv.org/abs/2605.22538)!
-- [ ] **Incoming** — Release test scripts for more benchmarks.
-- [ ] **Incoming** — Release raw results.
+- [x] **Done** — Test scripts for more benchmarks released.
+- [x] **Done** — Raw results released on [Google Drive](https://drive.google.com/file/d/1loIjhCcQcjVlgbPvryaDefDE4a1tdEUS/view?usp=sharing).
 - [ ] **Incoming** — Release training code for the Motion Predictor.
 - [ ] **Incoming** — Release a demo script to support inference on video.
 
@@ -102,10 +102,11 @@ Run inference and evaluation on all datasets using:
 bash scripts/test.sh
 ```
 
-You can also run evaluation on prepared raw results by running:
+We provide our **raw results** on [Google Drive](https://drive.google.com/file/d/1loIjhCcQcjVlgbPvryaDefDE4a1tdEUS/view?usp=sharing). Download `samosa_raw_results.zip`, unzip it, and place the contents in `output/samosa_raw_results` to reproduce our reported metrics directly. You can run evaluation on prepared raw results by running:
 
 ```bash
-python utils/calc_uav_metrics.py --res_path PATH_OF_RESULTS
+python utils/calc_vot_metrics.py --res_path output/samosa_raw_results # LaSOT_ext, OTB100
+python utils/calc_uav_metrics.py --res_path output/samosa_raw_results # anti-UAV benchmarks
 ```
 
 ## 🙏 Acknowledgment

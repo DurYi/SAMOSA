@@ -12,30 +12,40 @@ sys.path.append("./sam2")
 from sam2.build_sam import build_sam2_video_predictor
 from utils.metrics import eval_acc
 from utils.calc_uav_metrics import calc_and_save_metrics
-from utils.utils import determine_model_cfg, load_gt_label
+from utils.utils import determine_model_cfg
 color = [(0, 255, 0)]
-                        
-def load_json_point(gt_path):
+   
+def load_gt_label(gt_path):
     with open(gt_path, 'r') as f:
-        data = json.load(f)  # Read JSON data
+        gt = f.readlines()
+    gt_rect = []
+    for fid, line in enumerate(gt):
+        x, y, w, h = map(int, line.split(' ')[1:])
+        gt_rect.append([x, y, w, h])
+    exist = []
+    for rect in gt_rect:
+        if rect == [-100, -100, -100, -100] or rect == [0, 0, 0, 0] or rect == []:
+            exist.append(0)
+        else:
+            exist.append(1)
+    gt_traj = {
+        'gt_rect': gt_rect,
+        'exist': exist
+    }
+    return gt_traj
+
+def load_txt_point(gt_path):
+    with open(gt_path, 'r') as f:
+        first_frame_label = f.readlines()
     prompts = {}
     points = {}
-    flag = False 
-    index = len(data['exist'])
-    for index in range(len(data['exist'])):
-        if data['exist'][index] == 1:
-            break
-    first_frame_label = data['gt_rect'][index] 
-    if index == len(data['exist']) - 1:
-        flag = True
-        return prompts, points, flag
-    x, y, w, h = first_frame_label  # Get x, y, w, h
-    # Convert top-left coordinates and width/height to center-point coordinates
-    x_center, y_center = (x + w / 2), (y + h / 2)
-    x_center, y_center, w, h = int(x_center), int(y_center), int(w), int(h)
-    prompts[0] = ((x, y, x + w, y + h), 0)  # Given box top-left and bottom-right coordinates
-    points[0] = [[x_center, y_center]]  # Save only the center-point coordinates
-    return prompts, points, flag, index
+    for fid, line in enumerate(first_frame_label):
+        x, y, w, h = map(int, line.split(' ')[1:])
+        xc, yc = (x + w / 2), y + h / 2
+        xc, yc = int(xc), int(yc)
+        prompts[fid] = ((x, y, x + w, y + h), 0)
+        points[fid] = [[xc,yc]]
+    return prompts, points
 
 def main(args):
     print(args)
@@ -44,7 +54,7 @@ def main(args):
     test_video_names = os.listdir(args.test_path)
     test_video_names.sort()
     method_name = 'samosa' if 'samosa' in args.mode else args.mode
-    out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/Anti-UAV300/test_infrared"
+    out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/DUT"
     
     for i, test_video_name in enumerate(test_video_names): 
         if osp.exists(f"{out_folder}/{test_video_name}.json"):
@@ -52,12 +62,13 @@ def main(args):
             continue
            
         video_folder = osp.join(args.test_path, test_video_name)
-        frames_path = osp.join(video_folder, 'infrared') \
-            if not args.inference_on_mp4 else osp.join(video_folder, 'infrared.mp4')
+        frames_path = video_folder
+        txt_path = osp.join(frames_path, test_video_name + '_gt_first.txt')
+        gt_path = osp.join(args.gt_path, test_video_name + '_gt.txt')
         print(f"({i+1}/{len(test_video_names)}):{frames_path}")
-        json_path = osp.join(video_folder, 'infrared.json')
-        gt_traj = load_gt_label(json_path)
-        prompts, points, flag, index = load_json_point(json_path)
+        gt_traj = load_gt_label(gt_path)
+        prompts, points = load_txt_point(txt_path)
+        index = 0
         if osp.isdir(frames_path):
             frames = sorted([osp.join(frames_path, f) for f in os.listdir(frames_path) if f.endswith(".jpg")])
             loaded_frames = [cv2.imread(frame_path) for frame_path in frames]
@@ -181,7 +192,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_root", default="output/", help="path to test video path")
-    parser.add_argument("--test_path", default="data/Anti-UAV300/test/", help="path to test video path")
+    parser.add_argument("--test_path", default="data/DUT/Anti-UAV-Tracking-V0/", help="path to test video path")
+    parser.add_argument("--gt_path", default="data/DUT/Anti-UAV-Tracking-V0GT/", help="Path to the gt file.")
     parser.add_argument("--model_path", default="sam2/checkpoints/sam2.1_hiera_large.pt", help="Path to the model checkpoint.")
     
     parser.add_argument("--mp_model_path", default="sam2/checkpoints/mp.pth", help="Path to the markov model checkpoint.")

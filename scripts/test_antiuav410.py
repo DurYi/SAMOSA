@@ -44,7 +44,7 @@ def main(args):
     test_video_names = os.listdir(args.test_path)
     test_video_names.sort()
     method_name = 'samosa' if 'samosa' in args.mode else args.mode
-    out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/Anti-UAV300/test_infrared"
+    out_folder = f"{args.out_root}/{method_name}{args.output_suffix}/Anti-UAV410/test"
     
     for i, test_video_name in enumerate(test_video_names): 
         if osp.exists(f"{out_folder}/{test_video_name}.json"):
@@ -52,10 +52,9 @@ def main(args):
             continue
            
         video_folder = osp.join(args.test_path, test_video_name)
-        frames_path = osp.join(video_folder, 'infrared') \
-            if not args.inference_on_mp4 else osp.join(video_folder, 'infrared.mp4')
+        frames_path = video_folder
         print(f"({i+1}/{len(test_video_names)}):{frames_path}")
-        json_path = osp.join(video_folder, 'infrared.json')
+        json_path = osp.join(video_folder, 'IR_label.json')
         gt_traj = load_gt_label(json_path)
         prompts, points, flag, index = load_json_point(json_path)
         if osp.isdir(frames_path):
@@ -181,11 +180,11 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--out_root", default="output/", help="path to test video path")
-    parser.add_argument("--test_path", default="data/Anti-UAV300/test/", help="path to test video path")
+    parser.add_argument("--test_path", default="data/Anti-UAV410/test/", help="path to test video path")
     parser.add_argument("--model_path", default="sam2/checkpoints/sam2.1_hiera_large.pt", help="Path to the model checkpoint.")
     
     parser.add_argument("--mp_model_path", default="sam2/checkpoints/mp.pth", help="Path to the markov model checkpoint.")
-    parser.add_argument("--mode", default="samosa_b", help="Mode to use (samosa | samurai | sam2.1 | ...)")
+    parser.add_argument("--mode", default="samosa_a", help="Mode to use (samosa | samurai | sam2.1 | ...)")
     parser.add_argument("--output_suffix", default="", help="Suffix to output folder")
     
     parser.add_argument("--no_ignore", default=True, help="Do not ignore videos without target in the first frame but with target in the rest frames.")
